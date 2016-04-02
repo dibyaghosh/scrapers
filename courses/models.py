@@ -20,16 +20,25 @@ class Course(Base):
     finals = Column(String)
     restrictions = Column(String)
 
-    def __init__(self, name):
+    def __init__(self, name="",code="",units="",description="",timeperweek="",prereqs="",subject="",courselevel="",grading="",finals="",restrictions=""):
         self.name = name
+        self.code = code
+        self.units = units
+        self.description = description
+        self.timeperweek = timeperweek
+        self.prereqs = prereqs
+        self.subject =subject
+        self.courselevel = courselevel
+        self.grading = grading
+        self.finals = finals
+        self.restrictions = restrictions
 
     def __repr__(self):
-        return "Course<%s>"%self.name
+        return "Course<%s>"%self.code
 
     def to_dict(self):
         d = dict()
         d['name'] = self.name
-        d['url'] = self.url
         return d
 
 if __name__ == "__main__":
