@@ -7,6 +7,7 @@ page = requests.get('http://guide.berkeley.edu/courses/')
 tree = html.fromstring(page.content)
 courses = tree.xpath('//*[@id="atozindex"]/ul/li/a')
 [print(i.text,i.attrib['href']) for i in courses]
+
 """
 page = requests.get(base_url+courses[0].attrib['href'])
 tree2 = html.fromstring(page.content)
