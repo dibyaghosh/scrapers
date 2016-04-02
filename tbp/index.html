@@ -1,0 +1,330 @@
+<html>
+<head>
+<script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+<script src="https://code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.2.0/js/tether.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.17.2/autocomplete.jquery.min.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.1/bootstrap3-typeahead.min.js"> </script> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js"></script>
+<link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/smooth-scroll/10.0.0/js/smooth-scroll.min.js"></script>
+<!-- fonts -->
+<link href='https://fonts.googleapis.com/css?family=Raleway:700' rel='stylesheet' type='text/css'>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.3/angular.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fileDownload/1.4.2/jquery.fileDownload.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.6.0/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.11/js/jquery.dataTables.min.js"></script>
+<link rel='stylesheet' href='https://cdn.datatables.net/1.10.11/css/dataTables.bootstrap.min.css' />
+</head>
+<body ng-app="myApp" ng-controller="myCtrl">
+  <div id="maintitle" class="page">
+  <div class="title">
+    Bearχive
+  </div>
+  <div class="title-desc">
+    The most extensive source of exam materials on the web
+  </div>
+  <div class="box">
+    <div class="container-1">
+        <input type="search form-control" id="search" placeholder="Find your class" />
+        <button class="icon"><i class="fa fa-search"></i></button>
+    </div>
+  </div>
+  <a data-scroll class="godown" ng-click="gotoCourse()"> Explore <i class="fa fa-arrow-down"></i>
+</a>
+</div>
+<div id="explore" class="page">
+  <nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li class=""><a data-scroll href="#"><b>The Bearchive</b></span></a></li>
+        <li><a href="#">Link</a></li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+<h2 id="coursename"> </h2>
+<div class="table-responsive col-md-9">
+<table class="table table-hover display" id="exams" cellspacing="0" width="100%">
+  <thead>
+    <tr>
+      <td> Exam </td>
+      <td> Semester </td>
+      <td>Instructor </td>
+    </tr>
+  </thead>
+  <tbody>
+      <tr ng-repeat="ex in exams" ng-click="loadExam(ex.url)">
+        <td>{{ex.exam}} </td>
+        <td> {{ex.time}}   </td>
+        <td> {{ex.instructors.join()}}  </td>
+  </tr>
+</tbody>
+</table>
+</div>
+<div class="col-md-3">
+  <h1> {{course.name}}
+  </h1>
+</div>
+
+</div>
+</div>
+
+  <script>
+
+  var app = angular.module('myApp', []);
+app.controller('myCtrl', function($scope,$http,$location) {
+  $scope.loadExam = function(url) {
+    window.location.href = 'http://tbp.berkeley.edu'+url;
+};
+  $scope.gotoCourse = function(){
+    smoothScroll.animateScroll( '#explore' );
+  }
+  smoothScroll.init();
+  $.get('/get/courses', function(data){
+      console.log(data);
+      $scope.courses = data.data;
+      var courses = new Bloodhound({
+        datumTokenizer: Bloodhound.tokenizers.whitespace,
+        queryTokenizer: Bloodhound.tokenizers.whitespace,
+        local: data.data
+        });
+        $('#search').typeahead({ hint: true, highlight: true, minLength: 1},
+          { name: 'courses', source: courses});
+    },'json');
+    $('#search').bind('typeahead:select', function(ev, suggestion) {
+        var index = $scope.courses.indexOf(suggestion);
+        $('#exams').DataTable().destroy();
+        load_course(index+1);
+        smoothScroll.animateScroll( '#explore' );
+        location.hash = index+1;
+      });
+    $scope.exams = [{'exam':'hi','solution':'ah','time':'now'}];
+    function load_course(i){
+      $http.get('get/exams/'+i).then(function(response){
+        $scope.course = response.data.course
+        $scope.exams = response.data.exams;
+        console.log($scope.course);
+        setTimeout(function(){$('#exams').DataTable(
+          {
+            stateSave: true,
+          }
+        );},200);
+      });
+    }
+    $( "#search" ).keypress(function( event ) {
+      if ( event.which == 13 ) {
+         console.log($( "#search" ).typeahead('val'));
+      }
+    });
+    if(location.hash.length > 2){
+      index = Number(location.hash.substring(2))
+      load_course(index);
+      $scope.gotoCourse();
+    }
+
+
+     /*
+    $.get('/get/exams/10', function(data){
+        $("#coursename").text(data.course.name);
+        console.log(data);
+        $scope.exams.push.apply($scope.exams,data.exams);
+        console.log($scope.exams);
+        console.log($scope.exams[1].time);
+    }); */
+});
+  </script>
+  <style>
+  body{
+    background: #343d46; url("static/wallpaper.jpg") no-repeat center center fixed;
+    background-color: #343d46;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+  color: white;
+  }
+
+  .navbar-collapse {
+    background-color: #343d46;
+  }
+  .page{
+    height: 100%;
+  }
+  .godown {
+    font-size: 30px;
+    color: slategray;
+    margin: 0;
+    font-family: sans-serif;
+    margin: auto;
+    position:relative;
+    bottom: 30px;
+
+  }
+  .godown:visited {
+      color: slategray;
+      text-decoration: none;
+  }
+  .godown:hover {
+    color: lightgray;
+    text-decoration: none;
+  }
+
+  #maintitle{
+    text-align: center;
+  }
+  .title {
+    margin-top: 300px;
+    font-size: 100px;
+    color: lightgrey;
+    text-align: center;
+    font-family: 'Raleway', sans-serif;
+  }
+  .title-desc {
+    font-size: 20px;
+    color: slategrey;
+    text-align: center;
+    font-family: 'Raleway', sans-serif;
+  }
+  .box{
+    margin: 100px auto;
+    width: 500px;
+    height: 80px;
+
+  }
+  .container-1{
+    /*overflow: hidden;*/
+    width: 500px;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+input,select {
+  background: #2b303b !important;
+  border: none;
+}
+
+.container-1 input#search{
+  width: 500px;
+  height: 80px;
+  background: #2b303b !important;
+  border: none;
+  font-size: 18pt;
+  float: left;
+  color: #63717f;
+  padding-left: 45px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+}
+.container-1 input#search::-webkit-input-placeholder {
+color: #65737e;
+}
+
+.container-1 input#search:-moz-placeholder { /* Firefox 18- */
+color: #65737e;
+}
+
+.container-1 input#search::-moz-placeholder {  /* Firefox 19+ */
+color: #65737e;
+}
+
+.container-1 input#search:-ms-input-placeholder {
+color: #65737e;
+}
+
+.container-1 button.icon{
+  -webkit-border-top-right-radius: 5px;
+  -webkit-border-bottom-right-radius: 5px;
+  -moz-border-radius-topright: 5px;
+  -moz-border-radius-bottomright: 5px;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+
+  border: none;
+  background: #232833;
+  height: 80px;
+  width: 80px;
+  color: #4f5b66;
+  opacity: 0;
+  font-size: 16pt;
+  z-index: 10;
+  -webkit-transition: all .55s ease;
+  -moz-transition: all .55s ease;
+  -ms-transition: all .55s ease;
+  -o-transition: all .55s ease;
+  transition: all .55s ease;
+}
+
+.container-1:hover button.icon, .container-1:active button.icon, .container-1>input:focus button.icon,.container-1:focus button.icon{
+    outline: none;
+    opacity: 1;
+    margin-left: -85px;
+    margin-top: -80px;
+    z-index: 10;
+  }
+
+  .container-1:hover button.icon:hover{
+    background: white;
+  }
+
+  .navbar-default .navbar-nav .open .dropdown-menu>li>a,.navbar-default .navbar-nav .open .dropdown-menu {
+  	background-color: #3344ff;
+    color:#ffffff;
+  }
+
+.tt-query {
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+     -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+          box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+
+.tt-hint {
+  color: #FFF;
+}
+
+.tt-menu {    /* used to be tt-dropdown-menu in older versions */
+  width: 500px;
+  margin-top: 4px;
+  padding: 4px;
+  background-color: #343d46;
+  border: 1px solid #ccc;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  color: lightgrey;
+  text-align: left;
+  -webkit-border-radius: 4px;
+     -moz-border-radius: 4px;
+          border-radius: 4px;
+  -webkit-box-shadow: 0 5px 10px rgba(0,0,0,.2);
+     -moz-box-shadow: 0 5px 10px rgba(0,0,0,.2);
+          box-shadow: 0 5px 10px rgba(0,0,0,.2);
+}
+
+.tt-suggestion {
+  padding: 3px 20px;
+  line-height: 24px;
+}
+
+.tt-suggestion.tt-cursor,.tt-suggestion:hover {
+  color: #fff;
+  background-color: #0097cf;
+
+}
+
+.tt-suggestion p {
+  margin: 0;
+}
+
+
+.table-hover tbody tr:hover td, .table-hover tbody tr:hover th {
+  background-color: #000000;
+}
+
+  </style>
+</body>
+</html>
