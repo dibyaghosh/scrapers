@@ -14,7 +14,7 @@ class TBPScraper:
 
     def parse(self):
         page = requests.get(base_url+'courses')
-        tree = html.fromstring(page.ocnntent)
+        tree = html.fromstring(page.content)
         dep_links = tree.xpath('//*[@id="content"]/ul/li/a')
         for dep in dep_links:
             department = Department(dep.text,dep.attrib['href'])
@@ -38,15 +38,13 @@ class TBPScraper:
         tree = html.fromstring(page.content)
         rows = tree.xpath('//*[@id="content"]/table[1]/tbody/tr')
         for exam in rows:
-            if len(exam.getchildren()) == 4:
-                inst,time,link = exam.getchildren()[:-1]
-                solornot = "Exam"
-                examtype = "Final"
-                time = time.text
-            else:
-                inst, examtype, solornot, time, link = exam.getchildren()[:-1]
-                time, examtype, solornot = time.text,examtype.text,solornot.text
-            exam = Exam(time, link[0].attrib['href'], examtype, solornot)
+            if(len(exam.getchildren()) < 5): 
+                break
+            inst, examtype, time, eurl,surl = exam.getchildren()[:-1]
+            eurl = base_url+eurl.getchildren()[0].attrib['href'] if any(eurl.getchildren()) else ""
+            surl = base_url+surl.getchildren()[0].attrib['href'] if any(surl.getchildren()) else ""
+            time, examtype = time.text,examtype.text
+            exam = Exam(time, examtype, eurl,surl)
             for i in inst:
                 instructor = self.get_instructor(i.text, i.attrib['href'])
                 exam.instructors.append(instructor)

@@ -44,7 +44,7 @@
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav navbar-nav">
         <li class=""><a data-scroll href="#"><b>The Bearchive</b></span></a></li>
-        <li><a href="#">Link</a></li>
+        <input type="search form-control" id="searchsmall" placeholder="Find your class" />
       </ul>
     </div><!-- /.navbar-collapse -->
   </div><!-- /.container-fluid -->
@@ -57,13 +57,15 @@
       <td> Exam </td>
       <td> Semester </td>
       <td>Instructor </td>
+      <td> Both </td>
     </tr>
   </thead>
   <tbody>
-      <tr ng-repeat="ex in exams" ng-click="loadExam(ex.url)">
+      <tr ng-repeat="ex in exams" ng-click="prompt(ex)">
         <td>{{ex.exam}} </td>
         <td> {{ex.time}}   </td>
         <td> {{ex.instructors.join()}}  </td>
+        <td> {{ex.eexists && ex.sexists}} </td>
   </tr>
 </tbody>
 </table>
@@ -71,18 +73,47 @@
 <div class="col-md-3">
   <h1> {{course.name}}
   </h1>
+  <ul class="list-group">
+    <a class="list-group-item" ng-repeat="guide in course.guides" ng-click="loadSG(guide.url)">
+      {{guide.name}}
+    </a>
+  </ul>
 </div>
 
 </div>
-</div>
 
+<div id="mod" class="modal fade ">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-body">
+        <a ng-click="loadExam(focusedexam.url)" class="btn btn-primary" data-dismiss="modal"> Exam</a>
+        <a ng-click="loadExam(focusedexam.solutionurl)" class="btn btn-danger">Solution</a>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
   <script>
 
   var app = angular.module('myApp', []);
 app.controller('myCtrl', function($scope,$http,$location) {
+  $scope.focusedexam = 1;
+  $scope.prompt = function(exam){
+    if(exam.eexists && exam.sexists){
+      $scope.focusedexam = exam;
+      $('#mod').modal({backdrop:false})
+    }
+    else if (exam.eexists) {
+      $scope.loadExam(exam.url);
+    } else {
+      $scope.loadExam(exam.solutionurl);
+    }
+  }
   $scope.loadExam = function(url) {
     window.location.href = 'http://tbp.berkeley.edu'+url;
 };
+  $scope.loadSG = function(url) {
+    window.location.href = 'http://studyfruit.com'+url;
+  };
   $scope.gotoCourse = function(){
     smoothScroll.animateScroll( '#explore' );
   }
@@ -97,20 +128,27 @@ app.controller('myCtrl', function($scope,$http,$location) {
         });
         $('#search').typeahead({ hint: true, highlight: true, minLength: 1},
           { name: 'courses', source: courses});
+          $('#searchsmall').typeahead({ hint: true, highlight: true, minLength: 1},
+            { name: 'courses', source: courses});
     },'json');
-    $('#search').bind('typeahead:select', function(ev, suggestion) {
+    var loadTypeHead = function(ev, suggestion) {
         var index = $scope.courses.indexOf(suggestion);
         $('#exams').DataTable().destroy();
         load_course(index+1);
         smoothScroll.animateScroll( '#explore' );
         location.hash = index+1;
-      });
+      }
+
+    $('#search').bind('typeahead:select', loadTypeHead);
+    $('#searchsmall').bind('typeahead:select', loadTypeHead);
+
+
     $scope.exams = [{'exam':'hi','solution':'ah','time':'now'}];
     function load_course(i){
       $http.get('get/exams/'+i).then(function(response){
         $scope.course = response.data.course
         $scope.exams = response.data.exams;
-        console.log($scope.course);
+        console.log(response.data);
         setTimeout(function(){$('#exams').DataTable(
           {
             stateSave: true,
@@ -118,11 +156,7 @@ app.controller('myCtrl', function($scope,$http,$location) {
         );},200);
       });
     }
-    $( "#search" ).keypress(function( event ) {
-      if ( event.which == 13 ) {
-         console.log($( "#search" ).typeahead('val'));
-      }
-    });
+
     if(location.hash.length > 2){
       index = Number(location.hash.substring(2))
       load_course(index);
@@ -149,6 +183,20 @@ app.controller('myCtrl', function($scope,$http,$location) {
   -o-background-size: cover;
   background-size: cover;
   color: white;
+  }
+
+  .list-group-item {
+    background-color: #343d46;
+    color: #FFF !important;
+  }
+
+  .list-group-item:hover {
+    background-color: #2b303b !important;
+    color: #FFF !important;
+  }
+
+  #searchsmall {
+    padding: 5px;
   }
 
   .navbar-collapse {
@@ -322,9 +370,13 @@ color: #65737e;
 
 
 .table-hover tbody tr:hover td, .table-hover tbody tr:hover th {
-  background-color: #000000;
+  background-color: #2b303b;
 }
 
+.modal-body {
+  background:rgb(52, 61, 70);
+}
   </style>
+}
 </body>
 </html>
